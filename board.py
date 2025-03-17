@@ -142,10 +142,10 @@ def info():
     """안내 메시지 출력"""
     st.markdown("""
         <div class="main-header">
-            <h1>🚀사고닷 방명록🚀</h1> 
+            <h1>📋 방명록</h1> 
             <p>
                 사고닷 서비스를 이용해 보신 소감이 어떠신가요? 💭<br>
-                여러분의 소중한 의견과 경험을 자유롭게 방명록에 남겨주세요! 💙
+                여러분의 소중한 의견과 경험을 자유롭게 방명록에 남겨주세요!
             </p>
             <p class="body-head">
                 여러분의 피드백은 저희에게 큰 힘이 됩니다 ✨
@@ -329,21 +329,24 @@ def display_reviews():
     </style>
     """, unsafe_allow_html=True)
     
-    # 초기화: active_form이 session_state에 없으면 추가
+    # 세션 상태 초기화
     if 'active_form' not in st.session_state:
         st.session_state.active_form = None
     
     st.write("### 방명록")
+    
+    # 모든 리뷰 불러오기
     cursor.execute("SELECT * FROM boards ORDER BY board_id DESC")
     all_reviews = cursor.fetchall()
 
+    # 각 리뷰 표시
     for idx, row in enumerate(all_reviews):
         review_id, name, password, review, likes = row[:5]
 
         # 리뷰 박스 생성
         st.markdown(f"""
         <div class="review-box">
-            <h4>💛 {name}님의 리뷰</h4>
+            <h4>💙 {name}님의 리뷰</h4>
             <p><strong>후기 내용:</strong> {review}</p>
             <p>좋아요 수: {likes}</p>
         </div>
@@ -354,10 +357,10 @@ def display_reviews():
                       (review_id, st.session_state.session_id))
         already_liked = cursor.fetchone() is not None
         
-        # 버튼들을 Streamlit으로 만들기
+        # 버튼 생성
         col1, col2, col3 = st.columns(3)
         
-        # 좋아요 버튼 - 흰색 텍스트로 변경
+        # 좋아요 버튼
         like_button = col1.button(
             "👍 이미 좋아요" if already_liked else "👍 좋아요", 
             key=f"like_{idx}",
@@ -365,68 +368,69 @@ def display_reviews():
         )
         
         # 수정 버튼
-        edit_button = col2.button(
-            "✏️ 수정", 
-            key=f"edit_{idx}"
-        )
+        edit_button = col2.button("✏️ 수정", key=f"edit_{idx}")
         
         # 삭제 버튼
-        delete_button = col3.button(
-            "🗑️ 삭제", 
-            key=f"delete_{idx}",
-        )
+        delete_button = col3.button("🗑️ 삭제", key=f"delete_{idx}")
 
+        # 좋아요 버튼 처리
         if like_button:
             handle_like(review_id)
 
-        # 수정 버튼 클릭 시
+        # 수정 버튼 처리
         if edit_button:
-            # 삭제 폼이 열려있는지 확인하고 닫기 -@@안돼!!!!!왜!!!!
+            # 모든 다른 폼 닫기
             for r_id in [r[0] for r in all_reviews]:
-                # 삭제 폼이 열려있으면 닫기
                 if f"show_delete_form_{r_id}" in st.session_state:
                     del st.session_state[f"show_delete_form_{r_id}"]
-            
-            # 다른 편집 폼이 열려있는지 확인하고 닫기--@@안돼!!!!!왜!!!!
-            for r_id in [r[0] for r in all_reviews]:
                 if r_id != review_id and f"show_edit_form_{r_id}" in st.session_state:
                     del st.session_state[f"show_edit_form_{r_id}"]
                     if f"edit_verified_{r_id}" in st.session_state:
                         del st.session_state[f"edit_verified_{r_id}"]
             
-            # 현재 폼을 활성화--@@안돼!!!!!왜!!!!
+            # 현재 폼 활성화
             st.session_state.active_form = f"edit_{review_id}"
             st.session_state[f"show_edit_form_{review_id}"] = True
             
         # 수정 폼 표시
         if st.session_state.get(f"show_edit_form_{review_id}", False):
             with st.container():
+                # 수정 폼 헤더
                 st.markdown("""
                 <div style="background-color: #f1f8e9; padding: 15px; border-radius: 8px; margin: 10px 0;">
                     <h5>리뷰 수정</h5>
                 </div>
                 """, unsafe_allow_html=True)
                 
-                password_input = st.text_input(f"비밀번호를 입력하세요", 
-                                             type="password", 
-                                             key=f"edit_pwd_{review_id}")
+                # 비밀번호 입력 필드
+                password_input = st.text_input(
+                    "비밀번호를 입력하세요", 
+                    type="password", 
+                    key=f"edit_pwd_{review_id}"
+                )
                 
+                # 비밀번호 인증 완료 시 수정 폼
                 if st.session_state.get(f"edit_verified_{review_id}", False):
-                    # 비밀번호 인증 완료 시 수정 폼 표시
-                    new_review = st.text_area("수정할 내용", 
-                                            value=review, 
-                                            key=f"edit_content_{review_id}")
+                    new_review = st.text_area(
+                        "수정할 내용", 
+                        value=review, 
+                        key=f"edit_content_{review_id}"
+                    )
                     
+                    # 저장 및 취소 버튼
                     col1, col2 = st.columns(2)
-                    save_button = col1.button("💾 저장", key=f"save_{review_id}",)
+                    save_button = col1.button("💾 저장", key=f"save_{review_id}")
                     cancel_button = col2.button("❌ 취소", key=f"cancel_{review_id}")
                     
+                    # 저장 버튼 처리
                     if save_button:
-                        # 수정 내용 저장
-                        cursor.execute("UPDATE boards SET comment = ?, updated_at = CURRENT_TIMESTAMP WHERE board_id = ?", 
-                                     (new_review, review_id))
+                        cursor.execute(
+                            "UPDATE boards SET comment = ?, updated_at = CURRENT_TIMESTAMP WHERE board_id = ?", 
+                            (new_review, review_id)
+                        )
                         conn.commit()
-                        # 수정 관련 상태 초기화
+                        
+                        # 상태 초기화
                         del st.session_state[f"show_edit_form_{review_id}"]
                         del st.session_state[f"edit_verified_{review_id}"]
                         st.session_state.active_form = None
@@ -434,18 +438,19 @@ def display_reviews():
                         now.sleep(1)
                         st.rerun()
                     
+                    # 취소 버튼 처리
                     if cancel_button:
-                        # 수정 취소 시 상태 초기화
                         del st.session_state[f"show_edit_form_{review_id}"]
                         del st.session_state[f"edit_verified_{review_id}"]
                         st.session_state.active_form = None
                         st.rerun()
                 else:
-                    # 비밀번호 확인 버튼과 취소 버튼을 나란히 배치
+                    # 비밀번호 확인 및 취소 버튼
                     verify_col1, verify_col2 = st.columns(2)
-                    verify_button = verify_col1.button("🔑 비밀번호 확인", key=f"verify_edit_{review_id}",)
+                    verify_button = verify_col1.button("🔑 비밀번호 확인", key=f"verify_edit_{review_id}")
                     cancel_edit_button = verify_col2.button("❌ 취소", key=f"cancel_edit_init_{review_id}")
                     
+                    # 비밀번호 확인 처리
                     if verify_button:
                         if password_input == password:
                             st.session_state[f"edit_verified_{review_id}"] = True
@@ -454,52 +459,55 @@ def display_reviews():
                         else:
                             st.error("비밀번호가 일치하지 않습니다.")
                     
+                    # 취소 버튼 처리
                     if cancel_edit_button:
-                        # 수정 취소 시 상태 초기화
                         del st.session_state[f"show_edit_form_{review_id}"]
                         st.session_state.active_form = None
                         st.rerun()
 
-        # 삭제 버튼 클릭 시
+        # 삭제 버튼 처리
         if delete_button:
-            # 편집 폼이 열려있는지 확인하고 닫기--@@안돼!!!!!왜!!!!
+            # 모든 다른 폼 닫기
             for r_id in [r[0] for r in all_reviews]:
-                # 편집 폼이 열려있으면 닫기--@@안돼!!!!!왜!!!!
                 if f"show_edit_form_{r_id}" in st.session_state:
                     del st.session_state[f"show_edit_form_{r_id}"]
                     if f"edit_verified_{r_id}" in st.session_state:
                         del st.session_state[f"edit_verified_{r_id}"]
-            
-            # 다른 삭제 폼이 열려있는지 확인하고 닫기--@@안돼!!!!!왜!!!!
-            for r_id in [r[0] for r in all_reviews]:
                 if r_id != review_id and f"show_delete_form_{r_id}" in st.session_state:
                     del st.session_state[f"show_delete_form_{r_id}"]
             
-            # 현재 폼을 활성화--@@안돼!!!!!왜!!!!
+            # 현재 폼 활성화
             st.session_state.active_form = f"delete_{review_id}"
             st.session_state[f"show_delete_form_{review_id}"] = True
             
         # 삭제 폼 표시
         if st.session_state.get(f"show_delete_form_{review_id}", False):
             with st.container():
+                # 삭제 폼 헤더
                 st.markdown("""
                 <div style="background-color: #ffebee; padding: 15px; border-radius: 8px; margin: 10px 0;">
                     <h5>리뷰 삭제</h5>
                 </div>
                 """, unsafe_allow_html=True)
                 
-                password_input = st.text_input(f"비밀번호를 입력하세요", 
-                                             type="password", 
-                                             key=f"del_pwd_{review_id}")
+                # 비밀번호 입력 필드
+                password_input = st.text_input(
+                    "비밀번호를 입력하세요", 
+                    type="password", 
+                    key=f"del_pwd_{review_id}"
+                )
                 
+                # 확인 및 취소 버튼
                 del_col1, del_col2 = st.columns(2)
                 confirm_button = del_col1.button("✓ 확인", key=f"confirm_del_{review_id}")
                 cancel_button = del_col2.button("❌ 취소", key=f"cancel_del_{review_id}")
                 
+                # 확인 버튼 처리
                 if confirm_button:
                     delete_with_password(review_id, name, password, password_input)
                     st.session_state.active_form = None
                 
+                # 취소 버튼 처리
                 if cancel_button:
                     del st.session_state[f"show_delete_form_{review_id}"]
                     st.session_state.active_form = None
@@ -558,23 +566,28 @@ def delete_with_password(review_id, name, stored_password, input_password):
     else:
         st.error("비밀번호가 일치하지 않습니다.")
 
-
 def display_sidebar():
     """사이드바를 표시하는 함수"""
     with st.sidebar:
         # 로고 및 타이틀
         st.markdown("<h1 style='font-size:120px;'>⚖️</h1>", unsafe_allow_html=True)
-            
         st.title("사고닷 방명록")
-        st.markdown('<p>사고닷 서비스를 이용해주셔서 감사합니다.<br>여러분의 소중한 의견을 남겨주세요.</p>', unsafe_allow_html=True)
+        st.markdown('사고닷 서비스를 이용해주셔서 감사합니다. 여러분의 소중한 의견을 남겨주세요.', unsafe_allow_html=True)         
         
         st.divider()
         
-        # 메뉴 버튼
-        st.subheader("소개합니다")
-        show_services = st.button("👩🏻‍⚖️ 우리 서비스 소개")
-        show_team = st.button("☀️ 우리 팀 소개")
-        show_home = st.button("🏠 홈 돌아가기")
+        # 카운터 표시 (총 후기 갯수와 총 좋아요 갯수)
+        st.subheader("📊 한눈에 보기")
+        
+        # 총 후기 갯수 
+        cursor.execute("SELECT COUNT(*) FROM boards")
+        total_reviews = cursor.fetchone()[0]
+        st.metric(label="총 후기 갯수", value=f"{total_reviews}개")
+        
+        # 총 좋아요 갯수
+        cursor.execute("SELECT SUM(likes) FROM boards")
+        total_likes = cursor.fetchone()[0] or 0  # 이 함수는 별도로 구현해야 함
+        st.metric(label="총 좋아요 갯수", value=f"{total_likes}개")
         
         st.divider()
         
@@ -582,18 +595,6 @@ def display_sidebar():
         st.caption("고객센터: 02-1004-1004")
         st.caption("이메일: sagodot@example.com")
         st.caption("© 2025 사고닷. All rights reserved.")
-    
-        # 세션 상태로 현재 페이지 관리
-    if 'current_page' not in st.session_state:
-        st.session_state.current_page = "홈"
-
-    # 버튼 클릭에 따라 페이지 상태 변경
-    if show_home:
-        st.session_state.current_page = "홈"
-    if show_team:
-        st.session_state.current_page = "우리 팀 소개"
-    if show_services:
-        st.session_state.current_page = "우리 서비스 소개"
 
 
 def main():
@@ -613,7 +614,7 @@ def main():
     display_reviews()
 
     # 사이드바 추가
-    menu_option = display_sidebar()
+    display_sidebar()
 
 if __name__ == "__main__":
     main()
