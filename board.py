@@ -5,6 +5,8 @@ import uuid
 import json
 import os
 
+# git 테스트중~~~!!~!~!~!
+print('왜 안될까')
 # DB 연동 - db이름: example.db
 conn = sqlite3.connect('example.db', check_same_thread=False)  
 cursor = conn.cursor()
